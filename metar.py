@@ -4,6 +4,19 @@ import sys
 
 
 def get_metar(icao, hoursback=None):
+    """
+    Download METAR from the NOAA Avation Weather Center
+    Parameters
+    ----------
+    icao : str
+        ICAO identifier used when reporting METARs
+    hoursback : str or int
+        Number of hours before present to query
+    Returns
+    ----------
+    obs : str
+        str with each observation as a seperate line (\n)
+    """
     if hoursback:
         metar_url = f'https://www.aviationweather.gov/metar/data?ids={icao}&format=raw&date=&hours={hoursback}&taf=off'
     else:
