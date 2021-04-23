@@ -108,4 +108,4 @@ rh_colorbar.set_label('Relative Humidity (dimensionless)')
 
 # save completeed figure in the imgs directory
 plt.savefig('imgs/cross_section/cross_section.png', bbox_inches='tight')
-plt.show()
+# plt.show()

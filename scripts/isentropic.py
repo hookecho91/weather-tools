@@ -45,6 +45,7 @@ mixing['units'] = 'dimensionless'
 # Interpolate all the data
 isen_level = np.array([290, 295, 300, 305, 310]) * units.kelvin
 
+# use Metoy to interpolate data 
 ret = mpcalc.isentropic_interpolation(isen_level, press, temperature, mixing, u, v)
 isen_press, isen_mixing, isen_u, isen_v = ret
 
@@ -55,6 +56,7 @@ isen_mixing = isen_mixing.squeeze()
 isen_u = isen_u.squeeze()
 isen_v = isen_v.squeeze()
 
+# search through the image directory to see if the plot already exists
 for isen_level_idx, isen_lvl in enumerate(isen_level):
     fname = f'imgs/isentropic/{isen_lvl.m}K_{str(time)[0:13]}.png'
     print(fname)
@@ -62,17 +64,17 @@ for isen_level_idx, isen_lvl in enumerate(isen_level):
         print('Already have it')
         continue
 
-    # Isentropic ascent
+    # smoothe the data to get a better snapshot of synoptic conditions
     isen_press = mpcalc.smooth_gaussian(isen_press.squeeze(), 9)
     isen_u = mpcalc.smooth_gaussian(isen_u.squeeze(), 9)
     isen_v = mpcalc.smooth_gaussian(isen_v.squeeze(), 9)
 
-    # Use .values because we don't care about using DataArray
+    # use .values because we don't care about using DataArray
     dx, dy = mpcalc.lat_lon_grid_deltas(lon.values, lat.values)
     lift = -mpcalc.advection(isen_press[isen_level_idx], [isen_u[isen_level_idx], 
                                                           isen_v[isen_level_idx]], [dx, dy], dim_order='yx')
 
-    # Plot isentropic ascent
+    # plot isentropic ascent and pressure levels
     fig = plt.figure(figsize=(14, 8), dpi=200)
     ax = fig.add_subplot(1, 1, 1, projection=ccrs.LambertConformal(central_longitude=-100))
     fig.patch.set_facecolor('white')
@@ -82,7 +84,7 @@ for isen_level_idx, isen_lvl in enumerate(isen_level):
     cntr = ax.contour(lon, lat, isen_press[isen_level_idx], transform=data_proj, colors='black', levels=levels)
     cntr.clabel(fmt='%d')
 
-
+    # plot isentropic wind in knots
     lon_slice = slice(None, None, 5)
     lat_slice = slice(None, None, 5)
     ax.barbs(lon[lon_slice], lat[lat_slice],
@@ -90,12 +92,13 @@ for isen_level_idx, isen_lvl in enumerate(isen_level):
              isen_v[isen_level_idx, lon_slice, lat_slice].to('knots').magnitude,
              transform=data_proj, zorder=2, length=5, regrid_shape=50)
 
-
+    # plot isentropic vertical motion in microbar/s
     levels = np.arange(-6, 7)
     cs = ax.contourf(lon, lat, lift.to('microbar/s'), levels=levels, cmap='RdBu',
                      transform=data_proj, extend='both')
     plt.colorbar(cs)
 
+    # add US/State boundaries using Cartopy
     ax.add_feature(cfeature.LAND)
     ax.add_feature(cfeature.OCEAN)
     ax.add_feature(cfeature.COASTLINE)
