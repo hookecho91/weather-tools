@@ -107,15 +107,13 @@ def meteogram(icao, hoursback):
     ax3.grid(which='both')
 
     # fourth axis is cloud coverage reported
-    # print(stuff)
+    
+    # loop over each cloud level to plot. Use a list comprehension to ensure strings don't get passed to pyplot
     for etage in ['low', 'medium', 'high', 'highest']:
         cloud_heights = np.array([x if type(x) != str else np.nan for x in df[f'{etage}_cloud_level'].values])
+        # plot clouds in units of thousands of feet (kft)
         ax4.plot(df['date_time'], cloud_heights/1000, label=etage, linestyle='', marker='*')
 
-    # ax4.plot(df['date_time'], stuff/1000, label='Low', linestyle='', marker='*')
-    # ax4.plot(df['date_time'], df['medium_cloud_level']/1000, label='Medium', linestyle='', marker='*')
-    # ax4.plot(df['date_time'], df['high_cloud_level']/1000, label='High', linestyle='', marker='*')
-    # ax4.plot(df['date_time'], df['highest_cloud_level']/1000, label='Highest', linestyle='', marker='*')
     ax4.set_ylim([0, 30])
     ax4.set_ylabel('Cloud Height (kft)')
     ax4.set_xlabel('Z-Time (MM-DD HH)')
