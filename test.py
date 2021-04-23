@@ -1,4 +1,5 @@
-import numpy
+import numpy as np
 
-if __name__ == '__main__'():
-  print({'numpy.pi':.6f})
+if __name__ == '__main__':
+  pi = np.pi
+  print(f'This is a test:\npi ~ {pi:.6f}')
