@@ -16,8 +16,9 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 def my_wetbulb(p, T, Td):
     it = np.nditer([p, T, Td, None],
-                       op_dtypes=['float', 'float', 'float', 'float'],
-                       flags=['buffered'])
+                   op_dtypes=['float', 'float', 'float', 'float'],
+                   flags=['buffered'])
+
     n = 0
     for press, temp, dewp, ret in it:
         n += 1
@@ -25,15 +26,19 @@ def my_wetbulb(p, T, Td):
         temp = temp * T.units
         dewp = dewp * Td.units
         lcl_pressure, lcl_temperature = mpcalc.lcl(press, temp, dewp)
-        moist_adiabat_temperatures = mpcalc.moist_lapse(concatenate([lcl_pressure, press]),
-                                                 lcl_temperature)
+        moist_adiabat_temperatures = mpcalc.moist_lapse(
+            concatenate([lcl_pressure, press]), lcl_temperature
+        )
+
         if moist_adiabat_temperatures.size == 0:
             print(f'Dewpoint Depression = 0 at {press}')
 #             ret[...] = ((temp.m + dewp.m)/2) * T.units
             ret[...] = np.nan
+
         else:
-    #     print(f'{n} {press.m} {temp.m:.2f} {dewp.m:.2f} {moist_adiabat_temperatures.size}')
+            # print(f'{n} {press.m} {temp.m:.2f} {dewp.m:.2f} {moist_adiabat_temperatures.size}')
             ret[...] = moist_adiabat_temperatures[-1].magnitude
+
     return it.operands[3] * moist_adiabat_temperatures.units
 
 
@@ -48,7 +53,7 @@ def make_skewt(station, hoursback=None):
         format_date -= timedelta(hours=hoursback)
 
     # print(format_date)
-    ds = xr.Dataset.from_dataframe(WyomingUpperAir.request_data(format_date, station))
+    ds = xr.Dataset.from_dataframe(WyomingUpperAir.request_data(format_date, station.strip('K')))
     # Set units for variables
     height = ds.height * units.meter
     p = ds.pressure.values * units.hPa
@@ -61,7 +66,11 @@ def make_skewt(station, hoursback=None):
     u, v = mpcalc.wind_components(wind_speed, np.deg2rad(wind_dir))
 
     # Drop any rows with all NaN values for T, Td, winds
-    ds = ds.dropna('index', how='all', subset=['temperature', 'dewpoint', 'direction', 'speed', 'u_wind', 'v_wind'])
+    ds = ds.dropna(
+        'index',
+        how='all',
+        subset=['temperature', 'dewpoint', 'direction', 'speed', 'u_wind', 'v_wind']
+    )
 
     #Can change the size of the figure by modifying 'figsize' to desired dimensions
     fig = plt.figure(figsize=(12, 12), dpi=300)
@@ -75,8 +84,8 @@ def make_skewt(station, hoursback=None):
 
     try:
         # Plot wetbulb as blue line
-        wb = mpcalc.wet_bulb_temperature(p, T, Td)
-        # wb = my_wetbulb(p, T, Td)
+        # wb = mpcalc.wet_bulb_temperature(p, T, Td)
+        wb = my_wetbulb(p, T, Td)
         skew.plot(p, wb, 'blue', linewidth=1, alpha=0.5)
     except (IndexError, RuntimeError, ValueError) as e:
         print(e)
@@ -87,10 +96,10 @@ def make_skewt(station, hoursback=None):
     # else:
     skew.ax.set_xlim(-40, 40)
 
-    # only plot winds every 50 mb. You can modify this if desired. 
+    # only plot winds every 50 mb. You can modify this if desired.
     interval = np.append(np.arange(0, 850, 50), np.arange(850, 1051, 25)) * units('hPa')
     ix = resample_nn_1d(p, interval)
-    skew.plot_barbs(p[ix], u[ix], v[ix])    
+    skew.plot_barbs(p[ix], u[ix], v[ix])
 
     # Calculate LCL height and plot as black dot
     lcl_pressure, lcl_temperature = mpcalc.lcl(p[0], T[0], Td[0])
@@ -99,7 +108,7 @@ def make_skewt(station, hoursback=None):
     prof = mpcalc.parcel_profile(p, TK[0], TdK[0]).to('degC')
     skew.plot(p, prof, 'k', linewidth=1)
 
-    # Plot path and LCL as triangle for elevated parcels 
+    # Plot path and LCL as triangle for elevated parcels
     skew.shade_cape(p, T, prof)
 
     # An example of a slanted line at constant T -- in this case the 0 isotherm
@@ -119,24 +128,24 @@ def make_skewt(station, hoursback=None):
     skew.plot_mixing_lines(w_mix, p_mix, color='green', linewidth=1, alpha=0.5)
     # loop over each array of mixing ratio coords and label as g/kg on the figure
     for i, x in enumerate(x_text):
-        skew.ax.text(x, 900, size=6, s=f'{w_mix[i][0]*1000} $g/kg$', horizontalalignment='right', 
-                    verticalalignment='bottom', rotation=57, alpha=0.5)
+        skew.ax.text(x, 900, size=6, s=f'{w_mix[i][0]*1000} $g/kg$', horizontalalignment='right',
+                     verticalalignment='bottom', rotation=57, alpha=0.5)
 
-    plt.title(f'{station} {format_date.strftime(f"%d%h%Y %HZ").upper()}', weight = 'bold', size = 20)
+    plt.title(f'{station} {format_date.strftime(f"%d%h%Y %HZ").upper()}', weight='bold', size=20)
     skew.ax.set_xlabel('Temperature [$^{\circ}C$]')
     skew.ax.set_ylabel('Pressure [$hPa$]')
     plt.text(1.1, 0.4, 'Wind Speed [$kts$]', rotation=270, transform=skew.ax.transAxes)
 
     #Change the 30% to alter size, currently plotting in top left (can change loc)
-    ax_hod = inset_axes(skew.ax, '25%', '20%', loc='upper left')  
-    h = Hodograph(ax_hod, component_range=80) #Change range in windspeeds 
+    ax_hod = inset_axes(skew.ax, '25%', '20%', loc='upper left')
+    h = Hodograph(ax_hod, component_range=80)  # Change range in windspeeds
     h.add_grid(increment=10)
     try:
         h.plot_colormapped(u, v, height)
     except ValueError as e:
         print(e)
     # Save and show the plot
-    fname = f'imgs/skewt/{station}_{format_date.strftime(f"%d%h%Y_%HZ").upper()}.png'
+    fname = f'../imgs/skewt/{station}_{format_date.strftime(f"%d%h%Y_%HZ").upper()}.png'
     plt.savefig(fname, bbox_inches='tight')
     # plt.show()
     plt.close(fig)
@@ -145,7 +154,8 @@ def make_skewt(station, hoursback=None):
 
 
 if __name__ == '__main__':
-    icao = 'IAD'
-    hoursback = None
+    icao = input('Enter ICAO: ').upper()
+    # icao = 'IAD'
+    hoursback = input('Enter hours back (Leave blank for most recent): ')
     fname = make_skewt(icao, hoursback)
     print(f'SkewT created for {icao} saved at {fname}')

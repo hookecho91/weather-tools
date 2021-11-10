@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-import sys
+# import sys
 
 
 def get_metar(icao, hoursback=None):
@@ -37,15 +37,18 @@ def get_metar(icao, hoursback=None):
 
 if __name__ == '__main__':
 
-    if len(sys.argv) > 1:
-        icao = str(sys.argv[1]).upper()
-    else:
-        icao = 'KPIT'
+    icao = input('Enter ICAO: ').upper()
+    hoursback = input('Enter hours back (Leave blank for most recent): ')
 
-    if len(sys.argv) > 2:
-        hoursback = sys.argv[2]
-    else:
-        hoursback = None
+    # if len(sys.argv) > 1:
+    #     icao = str(sys.argv[1]).upper()
+    # else:
+    #     icao = 'KPIT'
+
+    # if len(sys.argv) > 2:
+    #     hoursback = sys.argv[2]
+    # else:
+    #     hoursback = None
 
     ob = get_metar(icao, hoursback)
     print(f'Latest observation(s) from {icao}:\n{ob}')
