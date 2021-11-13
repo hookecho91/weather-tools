@@ -1,3 +1,5 @@
+#!/Users/virgil/anaconda3/envs/metr/bin/python
+
 import matplotlib.pyplot as plt
 import requests
 from bs4 import BeautifulSoup
