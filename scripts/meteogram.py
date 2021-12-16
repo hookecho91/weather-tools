@@ -128,7 +128,11 @@ def meteogram(icao, hoursback):
     lines_1, labels_1 = ax2.get_legend_handles_labels()
     ax2b.plot(df['date_time'], df['wind_direction'], label='Direction', linestyle='', marker='*', color='tab:cyan')
     lines_2, labels_2 = ax2b.get_legend_handles_labels()
-    ax2.set_ylim([0, 30])
+    max_wind = df['wind_speed'].max()*1.15078
+    if max_wind > 30:
+        ax2.set_ylim([0, max_wind+5])
+    else:
+        ax2.set_ylim([0, 30])
     ax2.set_ylabel('Wind Speed (mph)')
     ax2b.set_ylabel('Wind Direction (°)')
     ax2b.set_ylim([-10,370])
@@ -198,3 +202,4 @@ if __name__ == '__main__':
     hoursback = input('Enter hours back (Leave blank for most recent): ')
     fname = meteogram(icao, hoursback)
     print(f'Meteogram for {icao} created.\n{fname}\n')
+    
